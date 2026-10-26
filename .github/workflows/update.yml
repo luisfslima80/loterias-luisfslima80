@@ -1,4 +1,4 @@
-name: Atualizar resultados da Lotofácil
+name: Atualizar resultados das quatro loterias
 on:
   workflow_dispatch:
   schedule:
@@ -19,8 +19,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/results.json
+          git add data/lotofacil.json data/megasena.json data/quina.json data/timemania.json
           if ! git diff --cached --quiet; then
-            git commit -m "Atualiza resultados da Lotofácil"
+            git commit -m "Atualiza resultados das loterias"
             git push
           fi
