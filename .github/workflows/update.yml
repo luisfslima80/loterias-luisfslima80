@@ -2,7 +2,8 @@ name: Atualizar resultados das quatro loterias
 on:
   workflow_dispatch:
   schedule:
-    - cron: '20 1 * * *'
+    # 06:20 e 12:20 no horario de Brasilia (UTC-3)
+    - cron: '20 9,15 * * *'
 permissions:
   contents: write
 jobs:
