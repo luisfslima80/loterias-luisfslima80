@@ -1,4 +1,4 @@
-"""Atualiza até 100 concursos de quatro modalidades da Caixa."""
+"""Atualiza resultados e amplia gradualmente o histórico até 1000 concursos."""
 import json
 import os
 import time
@@ -34,7 +34,8 @@ def run_mode(mode, count):
     if not valid(latest, count):
         raise RuntimeError("Resposta inesperada para " + mode)
     by_number[latest["numero"]] = latest
-    for number in range(latest["numero"] - 1, max(0, latest["numero"] - 100), -1):
+    backfilled = 0
+    for number in range(latest["numero"] - 1, max(0, latest["numero"] - 1000), -1):
         if number in by_number:
             continue
         try:
@@ -43,8 +44,11 @@ def run_mode(mode, count):
                 by_number[number] = row
         except Exception as exc:
             print(mode, number, "falhou:", exc)
+        backfilled += 1
+        if backfilled >= 100:
+            break
         time.sleep(0.1)
-    selected = [by_number[n] for n in sorted(by_number, reverse=True) if n <= latest["numero"]][:100]
+    selected = [by_number[n] for n in sorted(by_number, reverse=True) if n <= latest["numero"]][:1000]
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps({"updated_at": datetime.now(timezone.utc).isoformat(),
