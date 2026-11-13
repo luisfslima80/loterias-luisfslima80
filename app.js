@@ -40,14 +40,13 @@ function renderSimulatorOptions(){
 }
 function parseNumbers(text){const raw=String(text).trim();if(!raw)return [];if(/[ ,;\-]/.test(raw))return raw.split(/[\s,;\-]+/).filter(Boolean).map(Number);const digits=raw.replace(/\D/g,'');return (digits.match(/.{1,2}/g)||[]).map(Number)}
 function formatNumberInput(input){
- const value=input.value,limit=maxPicks[input.id==='favNumbers'?$('favMode').value:mode];
- const hasSeparators=/[,;\-\s]/.test(value.replace(/,\s*$/,''));
- let parts;
- if(hasSeparators){parts=value.split(/[,;\-\s]+/).filter(Boolean).slice(0,limit).map(v=>v.replace(/\D/g,'').slice(0,2)).filter(Boolean)}
- else{const digits=value.replace(/\D/g,'').slice(0,limit*2);parts=digits.match(/.{1,2}/g)||[]}
+ const m=input.id==='favNumbers'?$('favMode').value:mode;
+ const digits=input.value.replace(/\D/g,'').slice(0,maxPicks[m]*2);
+ const parts=digits.match(/.{1,2}/g)||[];
  const formatted=parts.join(', ');
- if(input.value!==formatted)input.value=formatted
+ if(input.value!==formatted)input.value=formatted;
 }
+
 function prizeFor(r,count,draw){const v=(draw===2?r.prizes2:r.prizes)||{};return Number.isFinite(Number(v[count]))&&v[count]!==undefined?Number(v[count]):null}
 function runSimulation(){
  const numbers=parseNumbers($('simNumbers').value),output=$('simOutput');
