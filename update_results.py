@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 BASE = "https://servicebus2.caixa.gov.br/portaldeloterias/api/"
-MODES = {"lotofacil": 15, "megasena": 6, "quina": 5, "timemania": 7, "duplasena": 6}
+MODES = {"duplasena": 6, "lotofacil": 15, "megasena": 6, "quina": 5, "timemania": 7}
 HEADERS = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
 
 def fetch(mode, number=None):
@@ -34,6 +34,7 @@ def run_mode(mode, count):
     if not valid(latest, count):
         raise RuntimeError("Resposta inesperada para " + mode)
     by_number[latest["numero"]] = latest
+    print(mode, "último concurso:", latest["numero"], flush=True)
     backfilled = 0
     for number in range(latest["numero"] - 1, max(0, latest["numero"] - 1000), -1):
         if number in by_number:
@@ -45,7 +46,7 @@ def run_mode(mode, count):
         except Exception as exc:
             print(mode, number, "falhou:", exc)
         backfilled += 1
-        if backfilled >= 100:
+        if backfilled >= 35:
             break
         time.sleep(0.1)
     selected = [by_number[n] for n in sorted(by_number, reverse=True) if n <= latest["numero"]][:1000]
