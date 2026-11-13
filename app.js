@@ -39,7 +39,15 @@ function renderSimulatorOptions(){
  $('simAvailable').textContent=rows().length+' concursos disponíveis';
 }
 function parseNumbers(text){const raw=String(text).trim();if(!raw)return [];if(/[ ,;\-]/.test(raw))return raw.split(/[\s,;\-]+/).filter(Boolean).map(Number);const digits=raw.replace(/\D/g,'');return (digits.match(/.{1,2}/g)||[]).map(Number)}
-function formatNumberInput(input){const value=input.value;const digits=value.replace(/\D/g,'').slice(0,maxPicks[input.id==='favNumbers'?$('favMode').value:mode]*2);const formatted=(digits.match(/.{1,2}/g)||[]).join(', ');if(input.value!==formatted)input.value=formatted}
+function formatNumberInput(input){
+ const value=input.value,limit=maxPicks[input.id==='favNumbers'?$('favMode').value:mode];
+ const hasSeparators=/[,;\-\s]/.test(value.replace(/,\s*$/,''));
+ let parts;
+ if(hasSeparators){parts=value.split(/[,;\-\s]+/).filter(Boolean).slice(0,limit).map(v=>v.replace(/\D/g,'').slice(0,2)).filter(Boolean)}
+ else{const digits=value.replace(/\D/g,'').slice(0,limit*2);parts=digits.match(/.{1,2}/g)||[]}
+ const formatted=parts.map(p=>p.length===1&&hasSeparators?pad(Number(p)):p).join(', ');
+ if(input.value!==formatted)input.value=formatted
+}
 function prizeFor(r,count,draw){const v=(draw===2?r.prizes2:r.prizes)||{};return Number.isFinite(Number(v[count]))&&v[count]!==undefined?Number(v[count]):null}
 function runSimulation(){
  const numbers=parseNumbers($('simNumbers').value),output=$('simOutput');
@@ -48,7 +56,7 @@ function runSimulation(){
  if(!selected.length){output.innerHTML='<p class="note">Ainda não há concursos disponíveis para esta modalidade.</p>';return}
  const simple=numbers.length===conf().pick;
  const hits=selected.map(r=>{const count=numbers.filter(n=>r.nums.includes(n)).length,count2=mode==='duplasena'&&r.nums2?.length?numbers.filter(n=>r.nums2.includes(n)).length:null;return {r,count,count2,p1:prizeFor(r,count,1),p2:count2===null?null:prizeFor(r,count2,2)}});
- const avg=hits.reduce((v,h)=>v+h.count+(h.count2??0),0)/(hits.length*(mode==='duplasena'?2:1));
+ const draws=hits.reduce((v,h)=>v+(h.count2===null?1:2),0);const avg=hits.reduce((v,h)=>v+h.count+(h.count2??0),0)/draws;
  const max=Math.max(...hits.flatMap(h=>h.count2===null?[h.count]:[h.count,h.count2]));
  const tally=new Map();for(const h of hits){for(const count of [h.count,h.count2])if(count!==null)tally.set(count,(tally.get(count)||0)+1)}
  const awarded=hits.reduce((n,h)=>n+(h.count>=conf().prizes[0]?1:0)+(h.count2!==null&&h.count2>=conf().prizes[0]?1:0),0);
