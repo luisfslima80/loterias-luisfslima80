@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 BASE = "https://servicebus2.caixa.gov.br/portaldeloterias/api/"
-MODES = {"lotofacil": 15, "megasena": 6, "quina": 5, "timemania": 7}
+MODES = {"lotofacil": 15, "megasena": 6, "quina": 5, "timemania": 7, "duplasena": 6}
 HEADERS = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
 
 def fetch(mode, number=None):
