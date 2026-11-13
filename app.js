@@ -45,7 +45,7 @@ function formatNumberInput(input){
  let parts;
  if(hasSeparators){parts=value.split(/[,;\-\s]+/).filter(Boolean).slice(0,limit).map(v=>v.replace(/\D/g,'').slice(0,2)).filter(Boolean)}
  else{const digits=value.replace(/\D/g,'').slice(0,limit*2);parts=digits.match(/.{1,2}/g)||[]}
- const formatted=parts.map(p=>p.length===1&&hasSeparators?pad(Number(p)):p).join(', ');
+ const formatted=parts.join(', ');
  if(input.value!==formatted)input.value=formatted
 }
 function prizeFor(r,count,draw){const v=(draw===2?r.prizes2:r.prizes)||{};return Number.isFinite(Number(v[count]))&&v[count]!==undefined?Number(v[count]):null}
