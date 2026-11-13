@@ -29,29 +29,37 @@ function renderSimulatorOptions(){
  if(list.some(g=>g.id===old))el.value=old;
  $('simAvailable').textContent=rows().length+' concursos disponíveis';
 }
+function parseNumbers(text){const raw=String(text).trim();if(!raw)return [];if(/[ ,;\-]/.test(raw))return raw.split(/[\s,;\-]+/).filter(Boolean).map(Number);const digits=raw.replace(/\D/g,'');return (digits.match(/.{1,2}/g)||[]).map(Number)}
+function formatNumberInput(input){const value=input.value;const digits=value.replace(/\D/g,'').slice(0,maxPicks[input.id==='favNumbers'?$('favMode').value:mode]*2);const formatted=(digits.match(/.{1,2}/g)||[]).join(', ');if(input.value!==formatted)input.value=formatted}
+function prizeFor(r,count,draw){const v=(draw===2?r.prizes2:r.prizes)||{};return Number.isFinite(Number(v[count]))&&v[count]!==undefined?Number(v[count]):null}
 function runSimulation(){
- const raw=$('simNumbers').value.trim();
- const numbers=raw.split(/[\s,;\-]+/).filter(Boolean).map(Number);
- const output=$('simOutput');
+ const numbers=parseNumbers($('simNumbers').value),output=$('simOutput');
  if(!numsValid(numbers,mode)){output.innerHTML='<p class="note">Informe de '+conf().pick+' a '+maxPicks[mode]+' dezenas diferentes entre 01 e '+conf().max+'.</p>';return}
  const selected=rows().slice(0,Number($('simLimit').value));
  if(!selected.length){output.innerHTML='<p class="note">Ainda não há concursos disponíveis para esta modalidade.</p>';return}
- const hits=selected.map(r=>({number:r.numero,date:r.date,count:numbers.filter(n=>r.nums.includes(n)).length,prize:r.prizes||{}}));
- const avg=hits.reduce((v,h)=>v+h.count,0)/hits.length;
- const max=Math.max(...hits.map(h=>h.count));
- const tally=new Map();for(const h of hits)tally.set(h.count,(tally.get(h.count)||0)+1);
- const awarded=hits.filter(h=>h.count>=conf().prizes[0]).length;
- const isSimple=numbers.length===conf().pick;
- const moneyKnown=isSimple&&hits.every(h=>h.count<conf().prizes[0]||Number.isFinite(h.prize[h.count]));
- const amount=hits.reduce((sum,h)=>sum+(Number(h.prize[h.count])||0),0);
- output.innerHTML='<div class="sim-summary"><div class="sim-stat"><span class="hint">Concursos analisados</span><b>'+hits.length+'</b></div><div class="sim-stat"><span class="hint">Média de acertos</span><b>'+avg.toFixed(2).replace('.',',')+'</b></div><div class="sim-stat"><span class="hint">Melhor resultado</span><b>'+max+'</b></div></div>'+
- '<p><b>'+awarded+'</b> concursos com acertos em faixa premiada'+(isSimple?'':' (estimativa por acertos brutos; apostas múltiplas têm desdobramentos)')+'.</p>'+
- '<div class="sim-bars">'+[...tally].sort((a,b)=>b[0]-a[0]).map(([n,q])=>'<span><b>'+n+' acertos</b> · '+q+' vez(es)</span>').join('')+'</div>'+
- (moneyKnown?'<p class="note">Prêmios históricos estimados: <b>'+money(amount)+'</b> · valores por aposta simples, sem correção monetária. Não representa lucro.</p>':'<p class="note">Valores financeiros não calculados: dados de rateio insuficientes ou aposta com dezenas adicionais.</p>')+
- '<h3>Histórico por concurso</h3><div class="sim-table"><table><thead><tr><th>Concurso</th><th>Data</th><th>Acertos</th></tr></thead><tbody>'+hits.map(h=>'<tr><td>'+h.number+'</td><td>'+esc(fmt(h.date))+'</td><td><b>'+h.count+'</b>'+(conf().prizes.includes(h.count)?' 🍀':'')+'</td></tr>').join('')+'</tbody></table></div>'+
- '<p class="note">Histórico disponível: '+rows().length+' concursos. A quantidade aumenta conforme as atualizações dos dados. Resultados passados não preveem sorteios futuros. Na Timemania, o Time do Coração é conferido separadamente.</p>';
+ const simple=numbers.length===conf().pick;
+ const hits=selected.map(r=>{const count=numbers.filter(n=>r.nums.includes(n)).length,count2=mode==='duplasena'&&r.nums2?.length?numbers.filter(n=>r.nums2.includes(n)).length:null;return {r,count,count2,p1:prizeFor(r,count,1),p2:count2===null?null:prizeFor(r,count2,2)}});
+ const avg=hits.reduce((v,h)=>v+h.count+(h.count2??0),0)/(hits.length*(mode==='duplasena'?2:1));
+ const max=Math.max(...hits.flatMap(h=>h.count2===null?[h.count]:[h.count,h.count2]));
+ const tally=new Map();for(const h of hits){for(const count of [h.count,h.count2])if(count!==null)tally.set(count,(tally.get(count)||0)+1)}
+ const awarded=hits.reduce((n,h)=>n+(h.count>=conf().prizes[0]?1:0)+(h.count2!==null&&h.count2>=conf().prizes[0]?1:0),0);
+ const moneyKnown=simple&&hits.every(h=>(h.count<conf().prizes[0]||h.p1!==null)&&(h.count2===null||h.count2<conf().prizes[0]||h.p2!==null));
+ const amount=hits.reduce((sum,h)=>sum+(h.p1||0)+(h.p2||0),0);
+ const row=(h,draw)=>{const count=draw===2?h.count2:h.count,prize=draw===2?h.p2:h.p1;return '<tr data-hits="'+count+'"><td>'+h.r.numero+'</td><td>'+esc(fmt(h.r.date))+'</td>'+(mode==='duplasena'?'<td>'+draw+'º</td>':'')+'<td><b>'+count+'</b>'+(conf().prizes.includes(count)?' 🍀':'')+'</td><td class="sim-prize">'+(simple&&conf().prizes.includes(count)?(prize!==null?money(prize):'Valor não disponível'):'—')+'</td></tr>'};
+ const tableRows=hits.map(h=>row(h,1)+(h.count2===null?'':row(h,2))).join('');
+ output.innerHTML='<div class="sim-summary"><div class="sim-stat"><span class="hint">Concursos analisados</span><b>'+hits.length+'</b></div><div class="sim-stat"><span class="hint">Média de acertos'+(mode==='duplasena'?' por sorteio':'')+'</span><b>'+avg.toFixed(2).replace('.',',')+'</b></div><div class="sim-stat"><span class="hint">Melhor resultado</span><b>'+max+'</b></div></div>'+
+ '<p><b>'+awarded+'</b> sorteio(s) com faixa premiada'+(simple?'':' (acertos brutos; apostas múltiplas exigem desdobramento)')+'.</p>'+
+ '<p class="note">Clique em uma quantidade de acertos para filtrar as datas e os concursos correspondentes.</p>'+
+ '<div class="sim-bars"><button type="button" data-filter-hits="all" class="active">Todos</button>'+[...tally].sort((a,b)=>b[0]-a[0]).map(([n,q])=>'<button type="button" data-filter-hits="'+n+'"><b>'+n+' acertos</b> · '+q+' vez(es)</button>').join('')+'</div>'+
+ (moneyKnown?'<p class="note">Prêmios históricos estimados: <b>'+money(amount)+'</b> · valores por aposta simples, sem correção monetária. Não representa lucro.</p>':'<p class="note">Valores financeiros parciais ou indisponíveis: dados de rateio insuficientes ou aposta ampliada.</p>')+
+ '<h3>Histórico por concurso</h3><p id="simFilterNote" class="sim-filter-note">Todos os sorteios analisados.</p><div class="sim-table"><table><thead><tr><th>Concurso</th><th>Data</th>'+(mode==='duplasena'?'<th>Sorteio</th>':'')+'<th>Acertos</th><th>Prêmio estimado</th></tr></thead><tbody>'+tableRows+'</tbody></table></div>'+
+ '<p class="note">Histórico disponível: '+rows().length+' concursos. A quantidade aumenta conforme as atualizações dos dados. Resultados passados não preveem sorteios futuros.'+(mode==='timemania'?' O Time do Coração é conferido separadamente.':'')+'</p>';
  $('simHint').textContent=selected.length<Number($('simLimit').value)?'Disponíveis '+selected.length+' dos '+$('simLimit').value+' concursos solicitados.':'';
 }
+$('simOutput').onclick=e=>{const button=e.target.closest('[data-filter-hits]');if(!button)return;const filter=button.dataset.filterHits;document.querySelectorAll('#simOutput [data-filter-hits]').forEach(b=>b.classList.toggle('active',b===button));let visible=0;document.querySelectorAll('#simOutput tr[data-hits]').forEach(row=>{const show=filter==='all'||row.dataset.hits===filter;row.hidden=!show;if(show)visible++});$('simFilterNote').textContent=filter==='all'?'Todos os sorteios analisados.':visible+' sorteio(s) com '+filter+' acertos — confira as datas abaixo.'};
+$('simNumbers').addEventListener('input',()=>formatNumberInput($('simNumbers')));
+$('favNumbers').addEventListener('input',()=>formatNumberInput($('favNumbers')));
+
 $('simSaved').onchange=()=>{const g=games.find(x=>x.id===$('simSaved').value&&x.mode===mode);if(g)$('simNumbers').value=g.nums.map(pad).join(' ');$('simOutput').innerHTML=''};
 $('simRun').onclick=runSimulation;
 
