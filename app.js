@@ -60,7 +60,7 @@ function checkInfo(g){
 }
 function renderGames(){
  const a=games.filter(g=>configs[g.mode]);$('gameCount').textContent=a.length;
- $('saved').innerHTML=a.map(g=>'<div class="result saved-game-card"><div class="row between"><b>'+esc(configs[g.mode].label)+' · '+esc(fmt(g.created))+'</b><div class="row"><button class="secondary" data-edit-saved="'+esc(g.id)+'">Editar</button><button class="danger" data-delete="'+esc(g.id)+'">Excluir</button></div></div>'+ball(g.nums)+(g.mode==='timemania'?'<p class="note">Time: '+esc(g.team||'—')+'</p>':'')+checkInfo(g)+'</div>').join('')||'<p class="note">Nenhum jogo salvo ainda.</p>';
+ $('saved').innerHTML=a.map(g=>'<div class="result saved-game-card"><div class="row between"><b>'+esc(configs[g.mode].label)+' · '+esc(fmt(g.created))+'</b><div class="row"><button class="secondary" data-edit-saved="'+esc(g.id)+'">Editar</button><button class="danger" data-delete="'+esc(g.id)+'">Excluir</button></div></div>'+(checkedGames.has(String(g.id))?'':ball(g.nums))+(g.mode==='timemania'&&!checkedGames.has(String(g.id))?'<p class="note">Time: '+esc(g.team||'—')+'</p>':'')+checkInfo(g)+'</div>').join('')||'<p class="note">Nenhum jogo salvo ainda.</p>';
  renderCheckOptions();$('gamesTotal').textContent=money(a.reduce((sum,g)=>sum+gamePrice(g),0));
 }
 async function checkAllSavedGames(){
