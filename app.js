@@ -49,7 +49,7 @@ function checkInfo(g){
   const matched=g.nums.filter(n=>d.nums.includes(n)),hits=matched.length,eligible=c.prizes.includes(hits),value=prizeFor(r,hits,d.number);
   const title=g.mode==='duplasena'?d.number+'º sorteio · ':'';
   const award=eligible?(simple?(value===null?'Faixa de '+hits+' acertos · valor indisponível':'Faixa de '+hits+' acertos · '+money(value)):'Faixa de '+hits+' acertos · aposta múltipla, conferir desdobramento'):'Sem faixa premiada por dezenas';
-  return '<div class="saved-check-draw"><div class="row between"><b>'+title+hits+' acerto(s)</b><span class="hint">'+award+'</span></div>'+ '<div class="saved-draw-label"><b>Dezenas sorteadas:</b></div>'+ball(d.nums,matched)+'<div class="hint">Verde = dezenas acertadas</div></div>';
+  return '<div class="saved-check-draw"><div class="row between"><b>'+title+hits+' acerto(s)</b><span class="hint">'+award+'</span></div>'+ '<div class="saved-draw-label"><b>Seu jogo:</b></div>'+ball(g.nums,matched)+'<div class="saved-draw-result"><b>Resultado sorteado:</b> '+d.nums.map(pad).join(' · ')+'</div></div>';
  }).join('');
  let team='';
  if(g.mode==='timemania'){
