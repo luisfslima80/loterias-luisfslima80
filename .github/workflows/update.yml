@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Buscar concursos da Caixa
@@ -23,5 +23,19 @@ jobs:
           git add data/lotofacil.json data/megasena.json data/quina.json data/timemania.json data/duplasena.json
           if ! git diff --cached --quiet; then
             git commit -m "Atualiza resultados das loterias"
-            git push
+            # Outra alteração pode chegar enquanto buscamos os concursos.
+            # Reaplicar somente os arquivos de dados sobre o main mais recente.
+            for tentativa in 1 2 3 4 5; do
+              if git push origin HEAD:main; then
+                break
+              fi
+              if [ "$tentativa" -eq 5 ]; then
+                echo "Falha ao publicar resultados após 5 tentativas"
+                exit 1
+              fi
+              echo "Repositório alterado durante a atualização; sincronizando (tentativa $tentativa)"
+              git fetch origin main
+              git rebase -X theirs origin/main
+              sleep 2
+            done
           fi
