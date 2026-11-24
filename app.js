@@ -116,6 +116,8 @@ function randomGameFromHistory(history,strategy,p,random=Math.random,options={})
   const even=chosen.filter(n=>n%2===0).length,shared=chosen.filter(n=>last.includes(n)).length;
   if(requiredParity!==null&&even!==requiredParity)continue;
   if(requiredRepeat!==null&&shared!==requiredRepeat)continue;
+  if(strategy==='balanced'&&parity==='any'&&Math.abs(even-(p-even))>1)continue;
+  if(strategy==='balanced'&&spread==='any'){const lower=chosen.filter(n=>n<=c.max/2).length;if(Math.abs(lower-(p-lower))>1)continue}
   if(spread==='balanced'){
    const lower=chosen.filter(n=>n<=c.max/2).length;
    if(lower<Math.floor(p*.3)||lower>Math.ceil(p*.7))continue;
@@ -189,7 +191,7 @@ $('generate').onclick=()=>{
   for(const dir of [-1,1]){const variant=neighborVariant(base,dir,n,seen);if(variant)generated.push(variant)}
   $('editMsg').textContent='Jogo principal + variações '+(generated.some(g=>g.neighborOf===-1)?'anteriores (−1) ':'')+(generated.some(g=>g.neighborOf===1)?'posteriores (+1)':'')+'.'+(generated.length<3?' Nem todas as variações são possíveis sem repetir dezenas ou ultrapassar os limites.':'');
  }else{
-  for(let i=0;i<+$('genCount').value;i++){let g,k=0;do{g=makeGame();k++}while(g&&seen.has(g.nums.join(','))&&k<100);if(!g)break;if(advOptions().diversity&&generated.some(other=>gamesOverlap(other,g)>=Math.max(1,pickTarget()-1)))continue;seen.add(g.nums.join(','));generated.push(g)}
+  for(let i=0;i<+$('genCount').value;i++){let g=null;for(let k=0;k<80;k++){const candidate=makeGame();if(!candidate)break;if(seen.has(candidate.nums.join(',')))continue;if(advOptions().diversity&&generated.some(other=>gamesOverlap(other,candidate)>=Math.max(1,pickTarget()-1)))continue;g=candidate;break}if(!g)break;seen.add(g.nums.join(','));generated.push(g)}
   $('editMsg').textContent='';
  }
  if(!generated.length){$('editMsg').textContent='Nenhum jogo atende aos filtros escolhidos. Tente reduzir as restrições.';renderEditor();return}editing=[...generated[0].nums];selectedGenerated=0;renderEditor();
