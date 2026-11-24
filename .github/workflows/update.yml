@@ -1,6 +1,9 @@
 name: Atualizar resultados das cinco loterias
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/update.yml'
   schedule:
     # 06:20 e 12:20 no horario de Brasilia (UTC-3)
     - cron: '20 9,15 * * *'
@@ -9,8 +12,11 @@ permissions:
 jobs:
   atualizar:
     runs-on: ubuntu-latest
+    concurrency:
+      group: atualizar-resultados
+      cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
